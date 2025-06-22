@@ -1,0 +1,31 @@
+---
+# Deployment playbook for {{ProjectName}}
+- name: Deploy {{ProjectName}}
+  hosts: "{{ target_env | default('production') }}"
+  become: yes
+  vars:
+    project_name: {{ProjectName}}
+    
+  roles:
+    - common
+    - dotnet
+    - web
+    
+  tasks:
+    - name: Clone or update repository
+      git:
+        repo: "{{ repository_url }}"
+        dest: "{{ deploy_path }}/{{ project_name }}"
+        version: main
+        
+    - name: Build and publish application
+      shell: |
+        cd "{{ deploy_path }}/{{ project_name }}"
+        dotnet restore
+        dotnet publish -c Release -o ./publish
+      
+    - name: Restart service
+      systemd:
+        name: "{{ project_name }}"
+        state: restarted
+        enabled: yes
