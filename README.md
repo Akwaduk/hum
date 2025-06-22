@@ -2,231 +2,163 @@
 
 ![hummingbird](Assets/hum.png)
 
-A hummingbird-fast CLI to bootstrap new apps from zero to production.
+**From idea to running prototype in under 60 seconds.**
 
-## Table of Contents
+hum is a CLI tool that eliminates the friction between having an app idea and seeing it running on your infrastructure. Built specifically for on-premise Debian/Linux environments, hum automates the entire bootstrap process—from repository creation to deployment—so you can focus on building features instead of configuring pipelines.
 
-- [What is hum?](#what-is-hum)
-- [Key Features](#key-features)
-- [Architecture Overview](#architecture-overview)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Commands](#commands)
-- [Configuration](#configuration)
-- [How It Works](#how-it-works)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
+## Why hum?
 
-What is hum?
+Every new service requires the same tedious setup: create a repository, configure CI/CD, set up deployment scripts, provision infrastructure, and wire everything together. This process typically takes hours or days and involves copying configuration from previous projects.
 
-hum is a global .NET tool that automates the boilerplate required to ship a new service in an opinionated GitHub → GitHub Actions → Ansible deployment pipeline.
+hum reduces this to a single command that:
+- Creates a GitHub repository from your chosen template
+- Sets up a complete CI/CD pipeline with GitHub Actions
+- Configures your Ansible inventory for deployment
+- Provisions the service on your infrastructure
+- Establishes monitoring and backup procedures
 
-With one command you get:
+## Quick Start
 
-A fresh GitHub repository generated from a template you choose.
+```bash
+# Install hum globally
+dotnet tool install -g hum
 
-A ready‑to‑run GitHub Actions workflow with build, test, and deploy stages wired‑up.
+# Create and deploy a new web API
+hum create my-orders-api --template dotnet-webapi --env production
 
-Inventory scaffolding in your infrastructure-as‑code repo so Ansible knows where to deploy.
+# Your service is now running at https://my-orders-api.yourdomain.com
+```
 
-Optional AWX/Tower job template for click‑to‑deploy convenience.
+That's it. Your idea is now a running service with proper CI/CD, monitoring, and backups.
 
-First‑class secrets management hooks (GitHub Secrets for CI, Ansible Vault or external back‑end for runtime).
+## How It Works
 
-Stop copying YAML around—hum turns “new idea” into “running in prod” in < 1 minute.
+hum orchestrates your existing infrastructure tools rather than replacing them:
 
-Key Features
+1. **Repository Creation**: Uses GitHub's API to create a new repository from your template library
+2. **CI/CD Setup**: Configures GitHub Actions workflows tailored to your deployment pipeline
+3. **Infrastructure Provisioning**: Updates your Ansible inventory and triggers deployment
+4. **Service Deployment**: Deploys your service to available servers with proper load balancing
+5. **Operations Setup**: Configures systemd services, NGINX routing, SSL certificates, and backup procedures
 
-Category
+```
+Developer → hum → GitHub → GitHub Actions → Ansible → Production Server
+    ↓           ↓        ↓              ↓         ↓
+   Idea    Repository  CI/CD      Deployment   Running App
+```
 
-Details
+## Prerequisites
 
-Repo bootstrap
+- **.NET 8.0+** - Required to run hum
+- **GitHub account** - With Personal Access Token for repository management
+- **Ansible control node** - For infrastructure automation (v2.15+)
+- **Target servers** - Debian/Linux servers managed by your Ansible inventory
 
-gh API integration, branch‑protection rules, default labels, CODEOWNERS
+Optional but recommended:
+- **AWX/Ansible Tower** - For web-based deployment management
+- **gh CLI** - Enhanced GitHub integration
 
-CI templates
+## Installation & Configuration
 
-Opinionated workflows for .NET 8+, container & non‑container builds, SCA/SAST slots
+```bash
+# Install hum
+dotnet tool install -g hum
 
-Inventory sync
+# Set up authentication
+export HUM_GITHUB_TOKEN="your_github_pat"
 
-Updates group/host vars and encrypts sensitive values via Ansible Vault
+# Configure defaults (optional)
+hum config init
+```
 
-Server binding
+Create `~/.config/hum/config.yaml` for your environment:
 
-Auto‑detect free app servers (or pick one), tags them with the new app
-
-Pluggable
-
-Hooks for custom code generators, alternate IaC back‑ends, Helm, Argo CD
-
-Written in C#
-
-Distributed as a global dotnet tool: dotnet tool install -g hum
-
-Architecture Overview
-
-flowchart LR
-  dev["Developer CLI<br/>hum"] --&gt; gh["GitHub<br/>New Repo"]
-  gh --&gt; gha["GitHub Actions<br/>(template workflow)"]
-  hum --&gt; inv["Ansible Inventory<br/>Pull Request"]
-  gha -- Trigger --> awx["Ansible AWX / CLI"]
-  awx -- Deploy --> srv["App Server<br/>NGINX · systemd · SQLite"]
-  srv -- Backups --> cpsvc["cp Backup Service"]
-
-Note – The diagram is generated, commit it to /docs/architecture.md for richer docs.
-
-Prerequisites
-
-Tool
-
-Min Version
-
-Notes
-
-.NET SDK
-
-8.0
-
-To run the CLI itself
-
-GitHub account
-
-n/a
-
-Personal Access Token with repo, workflow, actions:read
-
-gh CLI
-
-latest
-
-Used internally for repo & secret ops
-
-Ansible control repo
-
-v2.15+
-
-Inventory stored in Git, preferably behind PR reviews
-
-(optional) AWX/Tower
-
-21+
-
-REST API token for job‑template cloning
-
-Installation
-
-# Install globally
-$ dotnet tool install -g hum
-
-# Or update
-$ dotnet tool update -g hum
-
-You’ll need a GitHub PAT exported as HUM_GITHUB_TOKEN or passed via --token.
-
-Quick Start
-
-# Bootstrap a new web API called "orders" and deploy to prod‑eu cluster
-hum create orders \
-    --template dotnet-webapi \
-    --env prod \
-    --host app-srv-03 \
-    --org my‑company
-
-# After the inventory PR merges, push your real code
-cd orders && git push origin main
-
-Within minutes your orders API is live behind NGINX, with nightly SQLite backups and systemd health‑checks.
-
-Commands
-
-Command
-
-Description
-
-hum create <name>
-
-Bootstrap a new project (repo + CI + inventory)
-
-hum list templates
-
-Show available project scaffolds
-
-hum list hosts
-
-Query inventory for eligible app servers
-
-hum doctor
-
-Validate credentials & environment
-
-hum destroy <name>
-
-(Safety first) Remove inventory references and archive repo
-
-Run hum <command> --help for all options.
-
-Configuration
-
-hum searches in this order:
-
-CLI flags (--org, --template, …)
-
-Environment variables (HUM_GITHUB_TOKEN, HUM_DEFAULT_ORG, …)
-
-~/.config/hum/config.yaml
-
-Sample config.yaml:
-
-# ~/.config/hum/config.yaml
-org: my-company
-inventory_repo: git@github.com:my-company/infra-inventory.git
+```yaml
+org: your-company
+inventory_repo: git@github.com:your-company/infrastructure.git
+default_template: dotnet-webapi
+default_environment: staging
 awx:
   url: https://awx.internal/api/
-  token: ${{ env.AWX_TOKEN }}
-default_template: dotnet-webapi
-default_env: dev
+  token_env: AWX_TOKEN
+```
 
-Secrets should not be stored here—use env vars or your secret manager.
+## Available Commands
 
-How It Works
+| Command | Purpose |
+|---------|---------|
+| `hum create <name>` | Bootstrap a new service with full deployment pipeline |
+| `hum templates` | List available project templates |
+| `hum servers` | Show available deployment targets |
+| `hum status <name>` | Check service deployment status |
+| `hum destroy <name>` | Safely remove service and clean up resources |
+| `hum doctor` | Validate configuration and connectivity |
 
-Template expansion – cookiecutter‑style tokens inject project name & ports into source and workflow files.
+## Templates
 
-GitHub bootstrap – The CLI calls /repos to create, then pushes the scaffold via a detached HEAD.
+hum includes templates for common service types:
 
-Inventory PR – New group_vars/<app>.yml and host assignment committed and pushed to a feature branch.
+- **dotnet-webapi** - ASP.NET Core Web API with OpenAPI
+- **dotnet-worker** - Background service with message processing
+- **static-site** - Static website with build pipeline
+- **database-service** - PostgreSQL/MySQL service with migrations
 
-CI pipeline runs on the new repo; once tests pass, it invokes Ansible with inventory path & artifact URL.
+Custom templates can be added to your organization's template repository.
 
-Ansible playbooks ensure packages, deploy artifacts, update systemd, and verify health endpoints.
+## Infrastructure Integration
 
-Rollback logic is handled by Ansible: if smoke checks fail, the current symlink re‑points to the previous release and the service restarts.
+hum works with your existing infrastructure:
 
-Roadmap
+**Ansible Integration**
+- Updates inventory files with new service configuration
+- Triggers deployment playbooks automatically
+- Manages secrets through Ansible Vault
 
+**Server Management**
+- Automatically selects available servers based on capacity
+- Configures load balancing and health checks
+- Sets up SSL certificates and domain routing
 
+**Monitoring & Operations**
+- Configures systemd services with proper logging
+- Sets up automated backups and retention policies  
+- Enables health monitoring and alerting
 
-Check the GitHub Issues for the latest.
+## Example Workflow
 
-Contributing
+```bash
+# Create a new order processing service
+hum create order-processor --template dotnet-webapi --env production
 
-Pull requests are welcome! Please read CONTRIBUTING.md for setup, coding style, and commit message conventions.
+# hum will:
+# 1. Create GitHub repo "order-processor" from template
+# 2. Configure CI/CD pipeline for .NET builds
+# 3. Update Ansible inventory with service configuration
+# 4. Deploy to available production server
+# 5. Configure NGINX, SSL, systemd, and backups
+# 6. Verify service health and availability
 
-Development setup
+# Result: https://order-processor.yourdomain.com is live
+```
 
-# Run the CLI from source
-$ dotnet run --project src/hum -- doctor
+## Contributing
 
-# Pack & install locally
-$ dotnet pack -c Release && dotnet tool install -g --add-source ./nupkg hum --version <version>
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
-License
+**Development Setup**
+```bash
+# Run from source
+dotnet run --project src/hum -- doctor
 
-Code is licensed under the MIT License – see LICENSE.
+# Build and test locally  
+dotnet pack -c Release
+dotnet tool install -g --add-source ./nupkg hum
+```
 
-Logo © 2025 Erik Johnson. Feel free to use it in the context of this project.
+## License
 
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+*Logo © 2025 Erik Johnson - free to use within this project context.*
