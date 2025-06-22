@@ -1,101 +1,232 @@
-# Hum
+# hum
 
-A CLI tool for provisioning and managing web applications with integrated source control, CI/CD pipelines, and infrastructure configuration.
+![hummingbird](Assets/hum.png)
 
-## Features
+A hummingbird-fast CLI to bootstrap new apps from zero to production.
 
-- Create new web applications from templates (currently .NET, with extensibility for others like Svelte)
-- Provision GitHub repositories with proper configuration
-- Set up CI/CD pipelines using GitHub Actions
-- Configure infrastructure using Ansible
-- Save and reuse project templates
+## Table of Contents
 
-## Architecture
+- [What is hum?](#what-is-hum)
+- [Key Features](#key-features)
+- [Architecture Overview](#architecture-overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [How It Works](#how-it-works)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
-Hum is built with a modular provider-based architecture that allows for easy extension:
+What is hum?
 
-- **Source Control Providers**: Manage repository creation and configuration (GitHub implementation provided)
-- **CI/CD Providers**: Set up continuous integration and deployment pipelines (GitHub Actions implementation provided)
-- **Infrastructure Providers**: Configure deployment infrastructure (Ansible implementation provided)
-- **Project Template Providers**: Create and configure different types of web applications (.NET implementation provided)
+hum is a global .NET tool that automates the boilerplate required to ship a new service in an opinionated GitHub → GitHub Actions → Ansible deployment pipeline.
 
-## Installation
+With one command you get:
 
-### Prerequisites
+A fresh GitHub repository generated from a template you choose.
 
-- .NET 6.0 SDK or later
-- Git
+A ready‑to‑run GitHub Actions workflow with build, test, and deploy stages wired‑up.
 
-### Building from Source
+Inventory scaffolding in your infrastructure-as‑code repo so Ansible knows where to deploy.
 
-```bash
-git clone https://github.com/yourusername/hum.git
-cd hum
-dotnet build
-```
+Optional AWX/Tower job template for click‑to‑deploy convenience.
 
-## Usage
+First‑class secrets management hooks (GitHub Secrets for CI, Ansible Vault or external back‑end for runtime).
 
-### Configuration
+Stop copying YAML around—hum turns “new idea” into “running in prod” in < 1 minute.
 
-Before using Hum, you need to configure it with your GitHub credentials:
+Key Features
 
-```bash
-dotnet run -- config --github-username your-username --github-token your-token --git-username "Your Name" --git-email "your.email@example.com"
-```
+Category
 
-To view your current configuration:
+Details
 
-```bash
-dotnet run -- config --show
-```
+Repo bootstrap
 
-### Creating a New Project
+gh API integration, branch‑protection rules, default labels, CODEOWNERS
 
-To create a new project with default settings:
+CI templates
 
-```bash
-dotnet run -- init --name MyProject --description "My awesome project"
-```
+Opinionated workflows for .NET 8+, container & non‑container builds, SCA/SAST slots
 
-Additional options:
+Inventory sync
 
-```bash
-dotnet run -- init --name MyProject --description "My awesome project" --template dotnet --output C:\Projects\MyProject
-```
+Updates group/host vars and encrypts sensitive values via Ansible Vault
 
-### Working with Templates
+Server binding
 
-Save a project configuration as a template:
+Auto‑detect free app servers (or pick one), tags them with the new app
 
-```bash
-dotnet run -- template save --name my-template --project-path C:\Projects\MyProject
-```
+Pluggable
 
-List available templates:
+Hooks for custom code generators, alternate IaC back‑ends, Helm, Argo CD
 
-```bash
-dotnet run -- template list
-```
+Written in C#
 
-Create a new project from a template:
+Distributed as a global dotnet tool: dotnet tool install -g hum
 
-```bash
-dotnet run -- template use --name my-template --project-name NewProject --description "New project from template"
-```
+Architecture Overview
 
-## Extending Hum
+flowchart LR
+  dev["Developer CLI<br/>hum"] --&gt; gh["GitHub<br/>New Repo"]
+  gh --&gt; gha["GitHub Actions<br/>(template workflow)"]
+  hum --&gt; inv["Ansible Inventory<br/>Pull Request"]
+  gha -- Trigger --> awx["Ansible AWX / CLI"]
+  awx -- Deploy --> srv["App Server<br/>NGINX · systemd · SQLite"]
+  srv -- Backups --> cpsvc["cp Backup Service"]
 
-Hum is designed to be extensible. To add support for new providers:
+Note – The diagram is generated, commit it to /docs/architecture.md for richer docs.
 
-1. Implement the appropriate provider interface:
-   - `ISourceControlProvider` for new source control systems
-   - `ICiCdProvider` for new CI/CD systems
-   - `IInfrastructureProvider` for new infrastructure management tools
-   - `IProjectTemplateProvider` for new project types
+Prerequisites
 
-2. Register your provider in the appropriate service
+Tool
 
-## License
+Min Version
 
-MIT
+Notes
+
+.NET SDK
+
+8.0
+
+To run the CLI itself
+
+GitHub account
+
+n/a
+
+Personal Access Token with repo, workflow, actions:read
+
+gh CLI
+
+latest
+
+Used internally for repo & secret ops
+
+Ansible control repo
+
+v2.15+
+
+Inventory stored in Git, preferably behind PR reviews
+
+(optional) AWX/Tower
+
+21+
+
+REST API token for job‑template cloning
+
+Installation
+
+# Install globally
+$ dotnet tool install -g hum
+
+# Or update
+$ dotnet tool update -g hum
+
+You’ll need a GitHub PAT exported as HUM_GITHUB_TOKEN or passed via --token.
+
+Quick Start
+
+# Bootstrap a new web API called "orders" and deploy to prod‑eu cluster
+hum create orders \
+    --template dotnet-webapi \
+    --env prod \
+    --host app-srv-03 \
+    --org my‑company
+
+# After the inventory PR merges, push your real code
+cd orders && git push origin main
+
+Within minutes your orders API is live behind NGINX, with nightly SQLite backups and systemd health‑checks.
+
+Commands
+
+Command
+
+Description
+
+hum create <name>
+
+Bootstrap a new project (repo + CI + inventory)
+
+hum list templates
+
+Show available project scaffolds
+
+hum list hosts
+
+Query inventory for eligible app servers
+
+hum doctor
+
+Validate credentials & environment
+
+hum destroy <name>
+
+(Safety first) Remove inventory references and archive repo
+
+Run hum <command> --help for all options.
+
+Configuration
+
+hum searches in this order:
+
+CLI flags (--org, --template, …)
+
+Environment variables (HUM_GITHUB_TOKEN, HUM_DEFAULT_ORG, …)
+
+~/.config/hum/config.yaml
+
+Sample config.yaml:
+
+# ~/.config/hum/config.yaml
+org: my-company
+inventory_repo: git@github.com:my-company/infra-inventory.git
+awx:
+  url: https://awx.internal/api/
+  token: ${{ env.AWX_TOKEN }}
+default_template: dotnet-webapi
+default_env: dev
+
+Secrets should not be stored here—use env vars or your secret manager.
+
+How It Works
+
+Template expansion – cookiecutter‑style tokens inject project name & ports into source and workflow files.
+
+GitHub bootstrap – The CLI calls /repos to create, then pushes the scaffold via a detached HEAD.
+
+Inventory PR – New group_vars/<app>.yml and host assignment committed and pushed to a feature branch.
+
+CI pipeline runs on the new repo; once tests pass, it invokes Ansible with inventory path & artifact URL.
+
+Ansible playbooks ensure packages, deploy artifacts, update systemd, and verify health endpoints.
+
+Rollback logic is handled by Ansible: if smoke checks fail, the current symlink re‑points to the previous release and the service restarts.
+
+Roadmap
+
+
+
+Check the GitHub Issues for the latest.
+
+Contributing
+
+Pull requests are welcome! Please read CONTRIBUTING.md for setup, coding style, and commit message conventions.
+
+Development setup
+
+# Run the CLI from source
+$ dotnet run --project src/hum -- doctor
+
+# Pack & install locally
+$ dotnet pack -c Release && dotnet tool install -g --add-source ./nupkg hum --version <version>
+
+License
+
+Code is licensed under the MIT License – see LICENSE.
+
+Logo © 2025 Erik Johnson. Feel free to use it in the context of this project.
+
