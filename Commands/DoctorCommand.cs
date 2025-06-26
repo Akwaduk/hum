@@ -32,9 +32,6 @@ namespace hum.Commands
             // Check Ansible
             allChecksPass &= await CheckAnsible();
 
-            // Check environment variables
-            allChecksPass &= CheckEnvironmentVariables();
-
             Console.WriteLine();
             if (allChecksPass)
             {
@@ -206,38 +203,24 @@ namespace hum.Commands
 
                 if (process.ExitCode == 0)
                 {
-                    Console.WriteLine($"✅ {output.Trim()}");
+                    string version = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+                    Console.WriteLine($"✅ {version.Trim()}");
+                    Console.WriteLine("   Note: For remote orchestrators, ensure SSH access is configured in your hum settings.");
                     return true;
                 }
                 else
                 {
                     Console.WriteLine("❌ Not found");
                     Console.WriteLine("   Install Ansible from https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
+                    Console.WriteLine("   If you use a remote Ansible orchestrator, this check can be ignored, but ensure connection details are in your hum settings.");
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine("❌ Not found or error occurred");
+                Console.WriteLine("   Install Ansible or configure a remote orchestrator in your hum settings.");
                 return false;
-            }
-        }
-
-        private bool CheckEnvironmentVariables()
-        {
-            Console.Write("Checking environment variables... ");
-
-            string? githubToken = Environment.GetEnvironmentVariable("HUM_GITHUB_TOKEN");
-            
-            if (!string.IsNullOrEmpty(githubToken))
-            {
-                Console.WriteLine("✅ HUM_GITHUB_TOKEN is set");
-                return true;
-            }
-            else
-            {
-                Console.WriteLine("⚠️  HUM_GITHUB_TOKEN not set (using config file instead)");
-                return true; // Not critical if config file has token
             }
         }
     }
