@@ -9,27 +9,38 @@ namespace hum.Commands
 {
     public class ConfigCommand : Command
     {
-        // Only need git config now - GitHub auth handled by CLI
+        // Made fields nullable to satisfy compiler, will be initialized in constructor
+        private readonly Option<string>? githubUsernameOption;
+        private readonly Option<string>? githubTokenOption;
         private readonly Option<string>? gitUsernameOption;
         private readonly Option<string>? gitEmailOption;
         private readonly Option<bool>? showOption;
 
         public ConfigCommand() : base("config", "Configure hum settings")
         {
-            // Only git config options now
-            gitUsernameOption = new Option<string>(
+            // Correctly initialize class fields
+            githubTokenOption = new Option<string>(
+                "--github-token",
+                "GitHub personal access token");
+                
+            githubUsernameOption = new Option<string>( // Corrected assignment
+                "--github-username",
+                "GitHub username");
+                
+            gitUsernameOption = new Option<string>( // Corrected assignment
                 "--git-username",
                 "Git username for commits");
                 
-            gitEmailOption = new Option<string>(
-                "--git-email", 
+            gitEmailOption = new Option<string>( // Corrected assignment
+                "--git-email",
                 "Git email for commits");
 
-            showOption = new Option<bool>(
+            showOption = new Option<bool>( // Corrected: Single assignment for showOption
                 "--show",
                 "Show current configuration");
                 
-            // Add options to command
+            AddOption(githubTokenOption);
+            AddOption(githubUsernameOption); 
             AddOption(gitUsernameOption);
             AddOption(gitEmailOption);
             AddOption(showOption);
@@ -52,12 +63,10 @@ namespace hum.Commands
             if (show)
             {
                 Console.WriteLine("Current Configuration:");
-                Console.WriteLine("GitHub Authentication: Use 'gh auth status' to check GitHub CLI");
-                Console.WriteLine($"Git Username: {settings.DefaultGitConfig?.Username ?? "Not set"}");
-                Console.WriteLine($"Git Email: {settings.DefaultGitConfig?.Email ?? "Not set"}");
-                Console.WriteLine("");
-                Console.WriteLine("Note: GitHub credentials are now handled by GitHub CLI.");
-                Console.WriteLine("Run 'gh auth login' to authenticate with GitHub.");
+                Console.WriteLine($"GitHub Username: {settings.GitHubUsername}");
+                Console.WriteLine($"GitHub Token: {(string.IsNullOrEmpty(settings.GitHubToken) ? "Not set" : "********")}");
+                Console.WriteLine($"Git Username: {settings.DefaultGitConfig.Username}");
+                Console.WriteLine($"Git Email: {settings.DefaultGitConfig.Email}");
                 return;
             }
             
@@ -77,16 +86,12 @@ namespace hum.Commands
             
             if (!string.IsNullOrEmpty(gitUsername))
             {
-                if (settings.DefaultGitConfig == null)
-                    settings.DefaultGitConfig = new GitConfig { Username = "", Email = "" };
                 settings.DefaultGitConfig.Username = gitUsername;
                 changed = true;
             }
             
             if (!string.IsNullOrEmpty(gitEmail))
             {
-                if (settings.DefaultGitConfig == null)
-                    settings.DefaultGitConfig = new GitConfig { Username = "", Email = "" };
                 settings.DefaultGitConfig.Email = gitEmail;
                 changed = true;
             }

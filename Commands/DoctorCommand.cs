@@ -27,8 +27,10 @@ namespace hum.Commands
 
             // Check Git
             allChecksPass &= await CheckGit();            // Check GitHub CLI (now required)
-            allChecksPass &= await CheckGitHubCli();            // Check hum configuration (now optional)
-            await CheckHumConfig();
+            allChecksPass &= await CheckGitHubCli();
+
+            // Check environment variables
+            allChecksPass &= CheckEnvironmentVariables();
 
             Console.WriteLine();
             if (allChecksPass)
@@ -174,39 +176,24 @@ namespace hum.Commands
                 Console.WriteLine("   Then run: gh auth login");
                 return false;
             }
-        }        private async Task<bool> CheckHumConfig()
+        }
+
+        private bool CheckEnvironmentVariables()
         {
-            Console.Write("Checking hum configuration... ");
+            Console.Write("Checking environment variables... ");
 
-            try
+            string? githubToken = Environment.GetEnvironmentVariable("HUM_GITHUB_TOKEN");
+            
+            if (!string.IsNullOrEmpty(githubToken))
             {
-                var configService = new ConfigurationService();
-                var settings = await configService.LoadSettingsAsync();
-
-                // With GitHub CLI, we only need git config for local operations
-                bool hasGitUsername = !string.IsNullOrEmpty(settings.DefaultGitConfig?.Username);
-                bool hasGitEmail = !string.IsNullOrEmpty(settings.DefaultGitConfig?.Email);
-
-                if (hasGitUsername && hasGitEmail)
-                {
-                    Console.WriteLine("✅ Git configuration set");
-                    return true;
-                }
-                else
-                {
-                    Console.WriteLine("⚠️  Git configuration incomplete (optional)");
-                    if (!hasGitUsername)
-                        Console.WriteLine("   Missing git username. Run: hum config --git-username \"Your Name\"");
-                    if (!hasGitEmail)
-                        Console.WriteLine("   Missing git email. Run: hum config --git-email \"your@email.com\"");
-                    Console.WriteLine("   Note: These are only needed for local git operations");
-                    return true; // Not critical since GitHub CLI handles authentication
-                }
+                Console.WriteLine("✅ HUM_GITHUB_TOKEN is set");
+                return true;
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"❌ Error loading config: {ex.Message}");
-                return false;
-            }        }
+                Console.WriteLine("⚠️  HUM_GITHUB_TOKEN not set (using config file instead)");
+                return true; // Not critical if config file has token
+            }
+        }
     }
 }
