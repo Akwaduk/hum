@@ -14,7 +14,8 @@ namespace hum
                 new InitCommand(),
                 new ConfigCommand(),
                 new TemplateCommand(),
-                new DoctorCommand()
+                new DoctorCommand(),
+                new InventoryCommand()
             };
 
             return await rootCommand.InvokeAsync(args);

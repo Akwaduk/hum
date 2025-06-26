@@ -29,6 +29,9 @@ namespace hum.Commands
             allChecksPass &= await CheckGit();            // Check GitHub CLI (now required)
             allChecksPass &= await CheckGitHubCli();
 
+            // Check Ansible
+            allChecksPass &= await CheckAnsible();
+
             // Check environment variables
             allChecksPass &= CheckEnvironmentVariables();
 
@@ -174,6 +177,48 @@ namespace hum.Commands
                 Console.WriteLine("❌ GitHub CLI not found");
                 Console.WriteLine("   Install from https://cli.github.com/");
                 Console.WriteLine("   Then run: gh auth login");
+                return false;
+            }
+        }
+
+        private async Task<bool> CheckAnsible()
+        {
+            Console.Write("Checking Ansible... ");
+            
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "ansible",
+                        Arguments = "--version",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                string output = await process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 0)
+                {
+                    Console.WriteLine($"✅ {output.Trim()}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("❌ Not found");
+                    Console.WriteLine("   Install Ansible from https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error: {ex.Message}");
                 return false;
             }
         }
