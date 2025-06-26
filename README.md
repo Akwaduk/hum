@@ -1,6 +1,6 @@
 # hum
 
-![hummingbird](Assets/hum.png)
+<img src="Assets/hum.png" alt="hummingbird" width="200" height="200">
 
 **From idea to running prototype in under 60 seconds.**
 
