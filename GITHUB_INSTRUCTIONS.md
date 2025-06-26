@@ -16,7 +16,7 @@ Welcome! **hum** is a global .NET CLI tool that bootstraps new services end-to-e
 ## Setting up Your Dev Environment
 
 ```bash
-git clone https://github.com/<your-org>/hum.git
+git clone https://github.com/akwaduk/hum.git
 cd hum
 make bootstrap       # or: dotnet restore
 make test            # runs unit tests

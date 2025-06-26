@@ -26,16 +26,9 @@ namespace hum.Commands
             allChecksPass &= await CheckDotNetSdk();
 
             // Check Git
-            allChecksPass &= await CheckGit();
-
-            // Check GitHub CLI (optional)
-            await CheckGitHubCli();
-
-            // Check hum configuration
-            allChecksPass &= await CheckHumConfig();
-
-            // Check environment variables
-            allChecksPass &= CheckEnvironmentVariables();
+            allChecksPass &= await CheckGit();            // Check GitHub CLI (now required)
+            allChecksPass &= await CheckGitHubCli();            // Check hum configuration (now optional)
+            await CheckHumConfig();
 
             Console.WriteLine();
             if (allChecksPass)
@@ -131,11 +124,9 @@ namespace hum.Commands
                 Console.WriteLine($"❌ Error: {ex.Message}");
                 return false;
             }
-        }
-
-        private async Task<bool> CheckGitHubCli()
+        }        private async Task<bool> CheckGitHubCli()
         {
-            Console.Write("Checking GitHub CLI (optional)... ");
+            Console.Write("Checking GitHub CLI authentication... ");
             
             try
             {
@@ -144,7 +135,7 @@ namespace hum.Commands
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "gh",
-                        Arguments = "--version",
+                        Arguments = "auth status",
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -154,28 +145,36 @@ namespace hum.Commands
 
                 process.Start();
                 string output = await process.StandardOutput.ReadToEndAsync();
+                string error = await process.StandardError.ReadToEndAsync();
                 await process.WaitForExitAsync();
 
                 if (process.ExitCode == 0)
                 {
-                    Console.WriteLine($"✅ {output.Split('\n')[0].Trim()}");
+                    // Parse the auth status output to get username
+                    string statusInfo = !string.IsNullOrEmpty(output) ? output : error;
+                    Console.WriteLine($"✅ Authenticated and ready");
+                    if (!string.IsNullOrEmpty(statusInfo))
+                    {
+                        Console.WriteLine($"   {statusInfo.Split('\n')[0].Trim()}");
+                    }
                     return true;
                 }
                 else
                 {
-                    Console.WriteLine("⚠️  Not found (optional but recommended)");
-                    Console.WriteLine("   Install from https://cli.github.com/");
-                    return true; // Not critical
+                    Console.WriteLine("❌ Not authenticated");
+                    Console.WriteLine("   Run: gh auth login");
+                    Console.WriteLine("   This will open your browser for secure OAuth authentication");
+                    return false;
                 }
             }
             catch (Exception)
             {
-                Console.WriteLine("⚠️  Not found (optional but recommended)");
-                return true; // Not critical
+                Console.WriteLine("❌ GitHub CLI not found");
+                Console.WriteLine("   Install from https://cli.github.com/");
+                Console.WriteLine("   Then run: gh auth login");
+                return false;
             }
-        }
-
-        private async Task<bool> CheckHumConfig()
+        }        private async Task<bool> CheckHumConfig()
         {
             Console.Write("Checking hum configuration... ");
 
@@ -184,47 +183,30 @@ namespace hum.Commands
                 var configService = new ConfigurationService();
                 var settings = await configService.LoadSettingsAsync();
 
-                bool hasGitHubToken = !string.IsNullOrEmpty(settings.GitHubToken);
-                bool hasGitHubUsername = !string.IsNullOrEmpty(settings.GitHubUsername);
+                // With GitHub CLI, we only need git config for local operations
+                bool hasGitUsername = !string.IsNullOrEmpty(settings.DefaultGitConfig?.Username);
+                bool hasGitEmail = !string.IsNullOrEmpty(settings.DefaultGitConfig?.Email);
 
-                if (hasGitHubToken && hasGitHubUsername)
+                if (hasGitUsername && hasGitEmail)
                 {
-                    Console.WriteLine("✅ GitHub credentials configured");
+                    Console.WriteLine("✅ Git configuration set");
                     return true;
                 }
                 else
                 {
-                    Console.WriteLine("❌ GitHub credentials not configured");
-                    if (!hasGitHubToken)
-                        Console.WriteLine("   Missing GitHub token. Run: hum config --github-token <your-token>");
-                    if (!hasGitHubUsername)
-                        Console.WriteLine("   Missing GitHub username. Run: hum config --github-username <your-username>");
-                    return false;
+                    Console.WriteLine("⚠️  Git configuration incomplete (optional)");
+                    if (!hasGitUsername)
+                        Console.WriteLine("   Missing git username. Run: hum config --git-username \"Your Name\"");
+                    if (!hasGitEmail)
+                        Console.WriteLine("   Missing git email. Run: hum config --git-email \"your@email.com\"");
+                    Console.WriteLine("   Note: These are only needed for local git operations");
+                    return true; // Not critical since GitHub CLI handles authentication
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error loading config: {ex.Message}");
                 return false;
-            }
-        }
-
-        private bool CheckEnvironmentVariables()
-        {
-            Console.Write("Checking environment variables... ");
-
-            string? githubToken = Environment.GetEnvironmentVariable("HUM_GITHUB_TOKEN");
-            
-            if (!string.IsNullOrEmpty(githubToken))
-            {
-                Console.WriteLine("✅ HUM_GITHUB_TOKEN is set");
-                return true;
-            }
-            else
-            {
-                Console.WriteLine("⚠️  HUM_GITHUB_TOKEN not set (using config file instead)");
-                return true; // Not critical if config file has token
-            }
-        }
+            }        }
     }
 }

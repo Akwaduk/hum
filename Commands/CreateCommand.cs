@@ -83,16 +83,17 @@ namespace hum.Commands
             {
                 Console.WriteLine("Error: Service name is required.");
                 return;
-            }
-
-            var configService = new ConfigurationService();
+            }            var configService = new ConfigurationService();
             var settings = await configService.LoadSettingsAsync();
 
-            if (string.IsNullOrEmpty(settings.GitHubToken) || string.IsNullOrEmpty(settings.GitHubUsername))
+            // Check if GitHub CLI is authenticated instead of manual token
+            var githubCliProvider = new Providers.GitHubCliProvider();
+            bool isAuthenticated = await githubCliProvider.IsAuthenticatedAsync();
+            
+            if (!isAuthenticated)
             {
-                Console.WriteLine("GitHub credentials not configured. Please run 'hum config' first.");
-                Console.WriteLine("Set your GitHub token: hum config --github-token <token>");
-                Console.WriteLine("Set your GitHub username: hum config --github-username <username>");
+                Console.WriteLine("GitHub CLI not authenticated. Please run 'gh auth login' first.");
+                Console.WriteLine("This will open your browser for secure OAuth authentication.");
                 return;
             }
 
@@ -139,11 +140,9 @@ namespace hum.Commands
             if (!string.IsNullOrEmpty(org))
             {
                 projectConfig.AdditionalOptions["github_org"] = org;
-            }
-
-            // Create providers
+            }            // Create providers
             var projectTemplateProvider = new Providers.DotNetTemplateProvider();
-            var sourceControlProvider = new Providers.GitHubProvider(settings.GitHubToken, settings.GitHubUsername);
+            var sourceControlProvider = new Providers.GitHubCliProvider(); // Use GitHub CLI instead
             var infrastructureProvider = new Providers.AnsibleProvider(null);
 
             // Create provisioning service
@@ -157,19 +156,17 @@ namespace hum.Commands
             try
             {
                 // Provision the project
-                string projectPath = await provisioningService.ProvisionProjectAsync(projectConfig);
-
-                Console.WriteLine();
+                string projectPath = await provisioningService.ProvisionProjectAsync(projectConfig);                Console.WriteLine();
                 Console.WriteLine($"✅ Service '{name}' created successfully!");
                 Console.WriteLine($"📁 Project path: {projectPath}");
-                Console.WriteLine($"🔗 Repository will be created at: https://github.com/{settings.GitHubUsername}/{name}");
+                Console.WriteLine($"🔗 Repository created via GitHub CLI");
                 Console.WriteLine();
                 Console.WriteLine("Next steps:");
                 Console.WriteLine($"1. Review the generated configuration in {projectPath}");
-                Console.WriteLine("2. Wait for the repository to be created and CI/CD to be configured");
+                Console.WriteLine("2. The repository has been created and is ready for development");
                 Console.WriteLine("3. The service will be automatically deployed to the specified environment");
                 Console.WriteLine();
-                Console.WriteLine($"Monitor deployment: gh repo view {settings.GitHubUsername}/{name} --web");
+                Console.WriteLine($"View repository: gh repo view {name} --web");
             }
             catch (Exception ex)
             {

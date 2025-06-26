@@ -64,11 +64,11 @@ Optional but recommended:
 # Install hum
 dotnet tool install -g hum
 
-# Set up authentication
-export HUM_GITHUB_TOKEN="your_github_pat"
+# Set up GitHub authentication
+gh auth login
 
-# Configure defaults (optional)
-hum config init
+# Verify setup
+hum doctor
 ```
 
 Create `~/.config/hum/config.yaml` for your environment:
