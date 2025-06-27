@@ -49,7 +49,8 @@ namespace hum.Services
                         InitializeWithReadme = true,
                         IgnoreTemplate = "dotnet"
                     },
-                    DefaultDeploymentConfig = new DeploymentConfig()
+                    DefaultDeploymentConfig = new DeploymentConfig(),
+                    AnsibleConfig = new AnsibleConfig()
                 };
                 
                 await SaveSettingsAsync(defaultSettings);
@@ -59,12 +60,17 @@ namespace hum.Services
             try
             {
                 string json = await File.ReadAllTextAsync(settingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
+                if (settings.AnsibleConfig == null)
+                {
+                    settings.AnsibleConfig = new AnsibleConfig();
+                }
+                return settings;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading settings: {ex.Message}");
-                return new AppSettings();
+                return new AppSettings { AnsibleConfig = new AnsibleConfig() };
             }
         }
 
@@ -149,7 +155,8 @@ namespace hum.Services
                 CiCdProvider = "GitHub",
                 InfrastructureProvider = "Ansible",
                 GitConfig = settings.DefaultGitConfig,
-                DeploymentConfig = settings.DefaultDeploymentConfig
+                DeploymentConfig = settings.DefaultDeploymentConfig,
+                AnsibleConfig = settings.AnsibleConfig
             };
         }
     }
@@ -160,5 +167,6 @@ namespace hum.Services
         public string? GitHubUsername { get; set; } // Made nullable
         public GitConfig? DefaultGitConfig { get; set; } // Made nullable
         public DeploymentConfig? DefaultDeploymentConfig { get; set; } // Made nullable
+        public AnsibleConfig? AnsibleConfig { get; set; }
     }
 }

@@ -211,15 +211,26 @@ namespace hum.Commands
                 else
                 {
                     Console.WriteLine("❌ Not found");
-                    Console.WriteLine("   Install Ansible from https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
-                    Console.WriteLine("   If you use a remote Ansible orchestrator, this check can be ignored, but ensure connection details are in your hum settings.");
+                    Console.WriteLine("   To use 'hum', you need either a local Ansible installation or a configured remote orchestrator.");
+                    Console.WriteLine();
+                    Console.WriteLine("   To install Ansible locally, visit:");
+                    Console.WriteLine("   https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
+                    Console.WriteLine();
+                    Console.WriteLine("   To configure a remote orchestrator, run `hum ansible-config` for an interactive setup.");
+                    Console.WriteLine("   Alternatively, you can create or update a 'hum.settings.json' file with your connection details.");
                     return false;
                 }
             }
             catch (Exception)
             {
                 Console.WriteLine("❌ Not found or error occurred");
-                Console.WriteLine("   Install Ansible or configure a remote orchestrator in your hum settings.");
+                Console.WriteLine("   To use 'hum', you need either a local Ansible installation or a configured remote orchestrator.");
+                Console.WriteLine();
+                Console.WriteLine("   To install Ansible locally, visit:");
+                Console.WriteLine("   https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
+                Console.WriteLine();
+                Console.WriteLine("   To configure a remote orchestrator, run `hum ansible-config` for an interactive setup.");
+                Console.WriteLine("   Alternatively, you can create or update a 'hum.settings.json' file with your connection details.");
                 return false;
             }
         }

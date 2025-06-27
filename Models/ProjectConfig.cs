@@ -17,6 +17,9 @@ namespace hum.Models
         
         // Deployment configuration
         public DeploymentConfig? DeploymentConfig { get; set; }
+
+        // Ansible configuration
+        public AnsibleConfig? AnsibleConfig { get; set; }
         
         // Additional configuration options that might be specific to certain providers
         public Dictionary<string, object> AdditionalOptions { get; set; } = new Dictionary<string, object>();

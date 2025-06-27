@@ -15,7 +15,8 @@ namespace hum
                 new ConfigCommand(),
                 new TemplateCommand(),
                 new DoctorCommand(),
-                new InventoryCommand()
+                new InventoryCommand(),
+                new AnsibleConfigCommand()
             };
 
             return await rootCommand.InvokeAsync(args);
