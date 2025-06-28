@@ -182,6 +182,24 @@ namespace hum.Commands
         {
             Console.Write("Checking Ansible... ");
             
+            // First, check if we have valid remote Ansible configuration
+            var configService = new ConfigurationService();
+            var settings = await configService.LoadSettingsAsync();
+            
+            if (settings.AnsibleConfig != null && 
+                !string.IsNullOrEmpty(settings.AnsibleConfig.Host) && 
+                !string.IsNullOrEmpty(settings.AnsibleConfig.User) && 
+                !string.IsNullOrEmpty(settings.AnsibleConfig.PrivateKeyPath) &&
+                File.Exists(settings.AnsibleConfig.PrivateKeyPath))
+            {
+                Console.WriteLine($"✅ Remote configuration found");
+                Console.WriteLine($"   Remote Ansible host: {settings.AnsibleConfig.Host}");
+                Console.WriteLine($"   SSH user: {settings.AnsibleConfig.User}");
+                Console.WriteLine($"   SSH key: {settings.AnsibleConfig.PrivateKeyPath}");
+                return true;
+            }
+            
+            // If no valid remote config, check for local installation
             try
             {
                 var process = new Process
@@ -204,8 +222,7 @@ namespace hum.Commands
                 if (process.ExitCode == 0)
                 {
                     string version = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
-                    Console.WriteLine($"✅ {version.Trim()}");
-                    Console.WriteLine("   Note: For remote orchestrators, ensure SSH access is configured in your hum settings.");
+                    Console.WriteLine($"✅ {version.Trim()} (local installation)");
                     return true;
                 }
                 else
