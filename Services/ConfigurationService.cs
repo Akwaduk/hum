@@ -8,12 +8,12 @@ namespace hum.Services
 {
     public class ConfigurationService
     {
-        private readonly string _configDirectory;
+        public string ConfigDirectory { get; }
         private readonly JsonSerializerOptions _jsonOptions;
 
         public ConfigurationService(string? configDirectory = null) // Made configDirectory nullable
         {
-            _configDirectory = configDirectory ?? Path.Combine(
+            ConfigDirectory = configDirectory ?? Path.Combine(
                 System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
                 ".hum");
                 
@@ -24,15 +24,15 @@ namespace hum.Services
             };
             
             // Ensure config directory exists
-            if (!Directory.Exists(_configDirectory))
+            if (!Directory.Exists(ConfigDirectory))
             {
-                Directory.CreateDirectory(_configDirectory);
+                Directory.CreateDirectory(ConfigDirectory);
             }
         }
 
         public async Task<AppSettings> LoadSettingsAsync()
         {
-            string settingsPath = Path.Combine(_configDirectory, "settings.json");
+            string settingsPath = Path.Combine(ConfigDirectory, "settings.json");
             
             if (!File.Exists(settingsPath))
             {
@@ -76,7 +76,7 @@ namespace hum.Services
 
         public async Task SaveSettingsAsync(AppSettings settings)
         {
-            string settingsPath = Path.Combine(_configDirectory, "settings.json");
+            string settingsPath = Path.Combine(ConfigDirectory, "settings.json");
             
             try
             {
@@ -92,7 +92,7 @@ namespace hum.Services
 
         public async Task<ProjectConfig> LoadProjectTemplateAsync(string templateName)
         {
-            string templatesDir = Path.Combine(_configDirectory, "templates");
+            string templatesDir = Path.Combine(ConfigDirectory, "templates");
             
             if (!Directory.Exists(templatesDir))
             {
@@ -120,7 +120,7 @@ namespace hum.Services
 
         public async Task SaveProjectTemplateAsync(string templateName, ProjectConfig config)
         {
-            string templatesDir = Path.Combine(_configDirectory, "templates");
+            string templatesDir = Path.Combine(ConfigDirectory, "templates");
             
             if (!Directory.Exists(templatesDir))
             {
