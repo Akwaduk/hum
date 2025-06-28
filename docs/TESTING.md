@@ -4,11 +4,27 @@ This document describes how to run and write tests for **hum**.
 
 ## Running Existing Tests
 
-If there are unit or integration tests, run:
+To run all tests in the solution:
 ```powershell
-# Run all tests in the solution
+# Run all tests via the make task
+make test
+
+# Or directly with dotnet:
 dotnet test
+
+# Run tests with code coverage
+dotnet test /p:CollectCoverage=true
 ```
+
+## Running End-to-End Tests
+
+The project includes Ansible-driven smoke tests:
+```powershell
+# Run the e2e tests
+make e2e
+```
+
+Note: You can skip the e2e tests by setting `HUM_E2E_SKIP=1` in your environment.
 
 ## Writing New Tests
 

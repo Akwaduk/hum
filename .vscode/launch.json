@@ -1,0 +1,80 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch ansible-config command",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net9.0/hum.dll",
+            "args": [
+                "ansible-config"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "HUM_CONFIG_DIR": "${workspaceFolder}/debug-config",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug ansible-config with test values",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net9.0/hum.dll",
+            "args": [
+                "ansible-config"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "HUM_CONFIG_DIR": "${workspaceFolder}/debug-config",
+                "HUM_TEST_HOST": "localhost",
+                "HUM_TEST_USER": "testuser",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Launch doctor command",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net9.0/hum.dll",
+            "args": [
+                "doctor"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "HUM_CONFIG_DIR": "${workspaceFolder}/debug-config",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Launch inventory command",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net9.0/hum.dll",
+            "args": [
+                "inventory"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "HUM_CONFIG_DIR": "${workspaceFolder}/debug-config",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build"
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ]
+}

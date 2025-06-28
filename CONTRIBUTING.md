@@ -1,55 +1,73 @@
-# Welcome to `hum`!
+# Contributing to hum
 
-`hum` is a .NET global tool designed to streamline the bootstrapping of new applications and their corresponding deployment pipelines. It helps developers get from `git init` to a deployed application with minimal friction. We welcome contributions of all kinds, from bug fixes to new features!
+Welcome! **hum** is a global .NET CLI tool that bootstraps new services end-to-end—GitHub repo, CI/CD via GitHub Actions, and Ansible inventory—so you can go from "idea" to "running in prod" in under a minute.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following tools installed:
-
-- [.NET SDK 9.0 or higher](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [GitHub CLI (`gh`)](https://cli.github.com/)
-- [Ansible 2.15+](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
-
-We also recommend the following VS Code extensions for the best development experience:
-
-- [C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
-- [markdownlint](https://marketplace.visualstudio.com/items?itemName=DavidAnson.vscode-markdownlint)
-- [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+- .NET SDK ≥ 9.0  
+- GitHub CLI (`gh`)  
+- Ansible 2.15+  
+- Recommended VS Code extensions:  
+  - **ms-dotnettools.csharp**  
+  - **DavidAnson.vscode-markdownlint**  
+  - **redhat.vscode-yaml**  
 
 ## Setting up your dev environment
 
-To get started with `hum` development, follow these steps:
+```bash
+git clone https://github.com/akwaduk/hum.git
+cd hum
+make bootstrap       # or: dotnet restore
+make test            # runs unit tests
+make e2e             # optional Ansible-driven smoke tests
+```
 
-1. **Clone the repository:**
+## Branch & PR Workflow
 
-   ```bash
-   git clone https://github.com/your-org/hum.git; cd hum
-   ```
+- **Fork** the repo (unless you have direct write access), then **branch** from `main`.  
+- Use **Conventional Commits** (`feat:`, `fix:`, `docs:`, etc.).  
+- Rebase your branch onto the latest `main` before opening a PR.  
+- Keep each PR focused on one logical change.
 
-2. **Bootstrap the project:**
+## Running the CLI from Source
 
-   This command restores .NET dependencies.
+```bash
+dotnet run --project src/hum -- doctor
+```
 
-   ```bash
-   make bootstrap
-   ```
+## Code Style
 
-   *(Alternatively, you can run `dotnet restore`)*
+- Target C# 10, .NET 9 conventions.  
+- An `.editorconfig` is committed.  
+- Run `make format` (alias for `dotnet format`) before each commit.
 
-3. **Run tests:**
+## Unit Tests & Coverage
 
-   This command executes the unit test suite.
+```bash
+dotnet test /p:CollectCoverage=true
+```
+- Coverage threshold: **90%**.
 
-   ```bash
-   make test
-   ```
+## End-to-End Smoke Tests
 
-4. **Run end-to-end smoke tests (Optional):**
+- Requires Ansible/AWX credentials.  
+- Skip by setting `HUM_E2E_SKIP=1`.
 
-   These tests use Ansible to perform basic smoke tests against a real environment. Ensure your Ansible is configured correctly before running.
+## Conventional Commit Message Guide
 
-   ```bash
-   make e2e
-   ```
+| Type      | Description               |
+|-----------|---------------------------|
+| feat      | ✨ New feature             |
+| fix       | 🐛 Bug fix                |
+| docs      | 📝 Documentation only     |
+| ci        | ⚙️ CI configuration       |
+| refactor  | ♻️ Code restructuring     |
+| chore     | 🔧 Maintenance tasks      |
 
-Now you're all set to start contributing!
+## Code of Conduct
+
+Be respectful and inclusive. See [CODE_OF_CONDUCT.md](docs/CODE_OF_CONDUCT.md).
+
+## License
+
+This project is licensed under MIT. See [LICENSE](LICENSE).

@@ -4,12 +4,14 @@ This guide walks through setting up your development environment for working on 
 
 ## Prerequisites
 
-- .NET 8.0 SDK or later
+- .NET 9.0 SDK or later
 - Git
+- GitHub CLI (`gh`)
+- Ansible 2.15+
 
 ## Fork & Clone
 
-1. Fork the repository on GitHub: https://github.com/your-org/hum
+1. Fork the repository on GitHub: https://github.com/akwaduk/hum
 2. Clone your fork locally:
    ```bash
    git clone https://github.com/<your-username>/hum.git
@@ -20,6 +22,8 @@ This guide walks through setting up your development environment for working on 
 
 ```powershell
 # Restore .NET dependencies
+make bootstrap
+# Or alternatively:
 dotnet restore
 ```
 
@@ -27,5 +31,9 @@ dotnet restore
 
 ```powershell
 # Run the doctor command to verify your environment
-dotnet run --project src/hum -- doctor
+dotnet run -- doctor
+
+# Run other commands
+dotnet run -- init --help
+dotnet run -- ansible-config
 ```
