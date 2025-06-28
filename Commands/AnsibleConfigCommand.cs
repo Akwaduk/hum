@@ -171,17 +171,15 @@ namespace hum.Commands
             {
                 // Create an RSA key pair directly using .NET
                 using var rsa = System.Security.Cryptography.RSA.Create(4096);
-                var privateKey = string.Empty;
-                var publicKey = string.Empty;
+                string privateKeyContent;
+                string publicKeyContent;
 
                 // Generate keys in PEM format which SSH.NET understands
                 try
                 {
-                    string privateKey;
-                    
                     if (string.IsNullOrEmpty(passphrase))
                     {
-                        privateKey = ExportRsaPrivateKeyAsPem(rsa);
+                        privateKeyContent = ExportRsaPrivateKeyAsPem(rsa);
                     }
                     else
                     {
@@ -192,18 +190,18 @@ namespace hum.Commands
                                 System.Security.Cryptography.HashAlgorithmName.SHA256,
                                 10000));
                         
-                        privateKey = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n" +
+                        privateKeyContent = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n" +
                                     Convert.ToBase64String(privateKeyBytes, Base64FormattingOptions.InsertLineBreaks) +
                                     "\n-----END ENCRYPTED PRIVATE KEY-----";
                     }
 
                     // Export public key in OpenSSH format
                     var rsaParams = rsa.ExportParameters(false);
-                    var publicKey = $"ssh-rsa {ConvertRsaParametersToOpenSshPublicKey(rsaParams)} hum-cli-generated-key";
+                    publicKeyContent = $"ssh-rsa {ConvertRsaParametersToOpenSshPublicKey(rsaParams)} hum-cli-generated-key";
 
                     // Save the keys to files with UTF-8 encoding without BOM
-                    await File.WriteAllTextAsync(privateKeyPath, privateKey, new System.Text.UTF8Encoding(false));
-                    await File.WriteAllTextAsync(publicKeyPath, publicKey, new System.Text.UTF8Encoding(false));
+                    await File.WriteAllTextAsync(privateKeyPath, privateKeyContent, new System.Text.UTF8Encoding(false));
+                    await File.WriteAllTextAsync(publicKeyPath, publicKeyContent, new System.Text.UTF8Encoding(false));
                 }
                 catch (Exception ex)
                 {
