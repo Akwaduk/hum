@@ -360,8 +360,28 @@ namespace hum.Providers
                 // This ensures authentication is handled through GitHub CLI
                 Console.WriteLine("Pushing code to GitHub using gh CLI...");
                 
-                // First try to get the default branch name
-                string defaultBranch = repository.DefaultBranch ?? "main";
+                // First determine the local branch name
+                Console.WriteLine("Determining current branch name...");
+                using var branchNameProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = "branch --show-current",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                branchNameProcess.Start();
+                string localBranch = (await branchNameProcess.StandardOutput.ReadToEndAsync()).Trim();
+                await branchNameProcess.WaitForExitAsync();
+                
+                // If we couldn't determine the local branch or it's empty, use the repository default branch or fall back to "main"
+                string defaultBranch = !string.IsNullOrWhiteSpace(localBranch) ? localBranch : (repository.DefaultBranch ?? "main");
+                Console.WriteLine($"Using branch: {defaultBranch}");
                 
                 // First check if we need to pull changes (e.g., if remote has a README)
                 Console.WriteLine("Checking if we need to pull changes from remote first...");
@@ -381,7 +401,25 @@ namespace hum.Providers
                 fetchProcess.Start();
                 await fetchProcess.WaitForExitAsync();
                 
-                // Try to pull with rebase to incorporate any remote changes (like README)
+                // Set up the branch tracking first, then try to pull
+                Console.WriteLine("Setting up branch tracking...");
+                using var branchSetupProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = $"branch --set-upstream-to=origin/{defaultBranch} {defaultBranch} || git checkout -b {defaultBranch}",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                branchSetupProcess.Start();
+                await branchSetupProcess.WaitForExitAsync();
+                
+                // Now try to pull with rebase to incorporate any remote changes
                 Console.WriteLine("Pulling remote changes with rebase...");
                 using var pullProcess = new Process
                 {
@@ -438,14 +476,40 @@ namespace hum.Providers
                 Console.WriteLine($"Direct git push failed with error: {directPushError}");
                 Console.WriteLine("Trying gh CLI push as alternative...");
                 
-                // If direct push fails, try gh CLI approach as backup
+                // Try another direct push approach with explicit branch
+                Console.WriteLine($"Attempting push with explicit branch setup...");
+                using var pushUpstreamProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = $"push --set-upstream origin {defaultBranch} --force",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                pushUpstreamProcess.Start();
+                string pushUpstreamOutput = await pushUpstreamProcess.StandardOutput.ReadToEndAsync();
+                string pushUpstreamError = await pushUpstreamProcess.StandardError.ReadToEndAsync();
+                await pushUpstreamProcess.WaitForExitAsync();
+                
+                if (pushUpstreamProcess.ExitCode == 0) {
+                    Console.WriteLine("Successfully pushed code with explicit upstream setting");
+                    return;
+                }
+                
+                // If direct push fails, try gh CLI approach as backup - using correct format
                 using var pushProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "gh",
-                        // Use gh repo sync to push local changes while handling authentication
-                        Arguments = $"repo sync {projectPath} --source=local --branch={defaultBranch} --force",
+                        // Use correct format for gh repo sync: OWNER/REPO
+                        Arguments = $"repo sync {repository.Owner}/{repository.Name} --source=local --branch={defaultBranch} --force",
                         WorkingDirectory = projectPath,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,

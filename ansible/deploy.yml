@@ -1,10 +1,10 @@
 ---
-# Deployment playbook for test-repo-push-fix
-- name: Deploy test-repo-push-fix
+# Deployment playbook for my-app
+- name: Deploy my-app
   hosts: "{{ target_env | default('production') }}"
   become: yes
   vars:
-    project_name: test-repo-push-fix
+    project_name: my-app
     
   roles:
     - common
