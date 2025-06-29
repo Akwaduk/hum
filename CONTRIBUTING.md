@@ -17,9 +17,9 @@ Welcome! **hum** is a global .NET CLI tool for bootstrapping applications and de
 ```powershell
 git clone https://github.com/akwaduk/hum.git
 cd hum
-dotnet restore       # instead of 'make bootstrap'
+dotnet restore       # or 'make bootstrap'
 dotnet test          # runs unit tests
-dotnet run -- doctor # verifies your environment setup
+dotnet run -- e2e    # optional Ansible-driven smoke tests
 ```
 
 ## Branch & PR Workflow
