@@ -2,6 +2,17 @@
 
 ## Modern Authentication with GitHub CLI (Recommended)
 
+hum uses **GitHub CLI** for secure, modern authentication instead of manual Personal Access Tokens.
+
+### Why GitHub CLI?
+
+✅ **More Secure** - Uses OAuth flow instead of long-lived tokens  
+✅ **Easier Setup** - No manual token management  
+✅ **Better UX** - Browser-based authentication  
+✅ **Future-proof** - Follows GitHub's current best practiceshentication Guide
+
+## Modern Authentication with GitHub CLI (Recommended)
+
 As of 2025, hum uses **GitHub CLI** for secure, modern authentication instead of manual Personal Access Tokens.
 
 ### Why GitHub CLI?

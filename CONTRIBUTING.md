@@ -5,7 +5,7 @@ Welcome! **hum** is a global .NET CLI tool for bootstrapping applications and de
 ## Prerequisites
 
 - .NET SDK ≥ 9.0  
-- GitHub CLI (`gh`)  
+- `gh` CLI  
 - Ansible 2.15+  
 - Recommended VS Code extensions:  
   - **ms-dotnettools.csharp**  
@@ -14,12 +14,12 @@ Welcome! **hum** is a global .NET CLI tool for bootstrapping applications and de
 
 ## Setting up your dev environment
 
-```powershell
-git clone https://github.com/akwaduk/hum.git
+```bash
+git clone <repo>
 cd hum
-dotnet restore       # or 'make bootstrap'
-dotnet test          # runs unit tests
-dotnet run -- e2e    # optional Ansible-driven smoke tests
+make bootstrap          # or 'dotnet restore'
+make test               # runs unit tests
+make e2e                # optional Ansible-driven smoke tests
 ```
 
 ## Branch & PR Workflow
@@ -31,7 +31,7 @@ dotnet run -- e2e    # optional Ansible-driven smoke tests
 
 ## Running the CLI from Source
 
-```powershell
+```bash
 # Run the CLI with arguments
 dotnet run -- doctor
 
@@ -41,7 +41,7 @@ dotnet run -- create --help
 
 You can also install your development version globally:
 
-```powershell
+```bash
 dotnet pack --configuration Release --output ./nupkg
 dotnet tool install -g --add-source ./nupkg hum
 ```
@@ -54,7 +54,7 @@ dotnet tool install -g --add-source ./nupkg hum
 
 ## Unit Tests & Coverage
 
-```powershell
+```bash
 dotnet test /p:CollectCoverage=true
 ```
 - Coverage threshold: **90%**.
@@ -64,9 +64,9 @@ dotnet test /p:CollectCoverage=true
 - Requires Ansible/AWX credentials.  
 - Skip by setting `$env:HUM_E2E_SKIP=1` in PowerShell.
 - You can run E2E tests with:
-  ```powershell
+  ```bash
   # Set environment and run e2e tests
-  $env:HUM_E2E_SKIP=0
+  export HUM_E2E_SKIP=0
   dotnet test --filter "Category=E2E"
   ```
 

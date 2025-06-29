@@ -1,0 +1,24 @@
+all:
+  name: all
+  children:
+    staging:
+      name: staging
+      children: {}
+      hosts:
+        TestBlazorApp4-server:
+          name: TestBlazorApp4-server
+          variables:
+            project_name: TestBlazorApp4
+            deploy_path: /var/www/TestBlazorApp4
+            repository_url: git@github.com:Akwaduk/TestBlazorApp4.git
+            ASPNETCORE_ENVIRONMENT: Staging
+            PROJECT_NAME: TestBlazorApp4
+        test-repo-push-fix-server:
+          name: test-repo-push-fix-server
+          variables:
+            project_name: test-repo-push-fix
+            deploy_path: /var/www/test-repo-push-fix
+            repository_url: git@github.com:Akwaduk/test-repo-push-fix.git
+            ASPNETCORE_ENVIRONMENT: Staging
+            PROJECT_NAME: test-repo-push-fix
+  hosts: {}

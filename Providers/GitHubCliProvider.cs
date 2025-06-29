@@ -363,14 +363,89 @@ namespace hum.Providers
                 // First try to get the default branch name
                 string defaultBranch = repository.DefaultBranch ?? "main";
                 
-                // Use gh CLI for push to ensure proper authentication
+                // First check if we need to pull changes (e.g., if remote has a README)
+                Console.WriteLine("Checking if we need to pull changes from remote first...");
+                using var fetchProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = "fetch",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                fetchProcess.Start();
+                await fetchProcess.WaitForExitAsync();
+                
+                // Try to pull with rebase to incorporate any remote changes (like README)
+                Console.WriteLine("Pulling remote changes with rebase...");
+                using var pullProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = $"pull --rebase origin {defaultBranch}",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                pullProcess.Start();
+                string pullOutput = await pullProcess.StandardOutput.ReadToEndAsync();
+                string pullError = await pullProcess.StandardError.ReadToEndAsync();
+                await pullProcess.WaitForExitAsync();
+                
+                if (pullProcess.ExitCode != 0)
+                {
+                    // If pull fails, we'll try to force push
+                    Console.WriteLine($"Warning: Pull failed: {pullError}. Will try to push anyway.");
+                }
+                
+                // Try two approaches for pushing - first try direct git push
+                Console.WriteLine($"Attempting direct git push to {defaultBranch}...");
+                using var directPushProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "git",
+                        Arguments = $"push -u origin {defaultBranch} --force",
+                        WorkingDirectory = projectPath,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                directPushProcess.Start();
+                string directPushOutput = await directPushProcess.StandardOutput.ReadToEndAsync();
+                string directPushError = await directPushProcess.StandardError.ReadToEndAsync();
+                await directPushProcess.WaitForExitAsync();
+                
+                // If direct git push succeeds, we're done
+                if (directPushProcess.ExitCode == 0) {
+                    Console.WriteLine("Successfully pushed code using direct git push");
+                    return;
+                }
+                
+                Console.WriteLine($"Direct git push failed with error: {directPushError}");
+                Console.WriteLine("Trying gh CLI push as alternative...");
+                
+                // If direct push fails, try gh CLI approach as backup
                 using var pushProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "gh",
                         // Use gh repo sync to push local changes while handling authentication
-                        Arguments = $"repo sync {projectPath} --source=local --branch={defaultBranch}",
+                        Arguments = $"repo sync {projectPath} --source=local --branch={defaultBranch} --force",
                         WorkingDirectory = projectPath,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -429,28 +504,97 @@ namespace hum.Providers
                     var error = await pushProcess.StandardError.ReadToEndAsync();
                     Console.WriteLine($"Warning: GitHub CLI push had issues: {error}");
                     
-                    // Try to create a basic README file directly using the API as a fallback
-                    Console.WriteLine("Creating initial README file as fallback...");
-                    try
-                    {
-                        using var createFileProcess = new Process
+                    // Final fallback: Delete and recreate repository
+                    Console.WriteLine("All push methods failed. Attempting repository recreation as fallback...");
+                    
+                    try {
+                        // Delete the existing repository
+                        Console.WriteLine($"Deleting repository {repository.Owner}/{repository.Name} to recreate it...");
+                        using var deleteRepoProcess = new Process
                         {
                             StartInfo = new ProcessStartInfo
                             {
                                 FileName = "gh",
-                                Arguments = $"api --method PUT repos/{repository.Owner}/{repository.Name}/contents/README.md --field message=\"Initial commit from hum CLI\" --field content=\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"# {projectConfig.Name}\n\n{projectConfig.Description}\n\nCreated with hum CLI"))}\"",
+                                Arguments = $"repo delete {repository.Owner}/{repository.Name} --yes",
+                                WorkingDirectory = projectPath,
                                 RedirectStandardOutput = true,
                                 RedirectStandardError = true,
                                 UseShellExecute = false,
                                 CreateNoWindow = true
                             }
                         };
-                        createFileProcess.Start();
-                        await createFileProcess.WaitForExitAsync();
+                        deleteRepoProcess.Start();
+                        await deleteRepoProcess.WaitForExitAsync();
+                        
+                        // Recreate the repository without README/AutoInit
+                        Console.WriteLine($"Recreating repository {repository.Name}...");
+                        using var createRepoProcess = new Process
+                        {
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = "gh",
+                                Arguments = $"repo create {repository.Name} --description \"{projectConfig.Description}\" --public --clone=false",
+                                WorkingDirectory = projectPath,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            }
+                        };
+                        createRepoProcess.Start();
+                        await createRepoProcess.WaitForExitAsync();
+                        
+                        // Try direct push again
+                        Console.WriteLine("Pushing to freshly created repository...");
+                        using var finalPushProcess = new Process
+                        {
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = "git",
+                                Arguments = $"push -u origin {defaultBranch}",
+                                WorkingDirectory = projectPath,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            }
+                        };
+                        finalPushProcess.Start();
+                        await finalPushProcess.WaitForExitAsync();
+                        
+                        if (finalPushProcess.ExitCode == 0) {
+                            Console.WriteLine("Successfully pushed code after repository recreation");
+                        } else {
+                            Console.WriteLine("Failed to push even after repository recreation. See troubleshooting in docs/WORKING_WITH_GITHUB.md");
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Ignore errors in the fallback method
+                        Console.WriteLine($"Repository recreation failed: {ex.Message}");
+                        
+                        // Absolute last resort - create a file via API
+                        Console.WriteLine("Creating initial README file as last resort...");
+                        try
+                        {
+                            using var createFileProcess = new Process
+                            {
+                                StartInfo = new ProcessStartInfo
+                                {
+                                    FileName = "gh",
+                                    Arguments = $"api --method PUT repos/{repository.Owner}/{repository.Name}/contents/README.md --field message=\"Initial commit from hum CLI\" --field content=\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"# {projectConfig.Name}\n\n{projectConfig.Description}\n\nCreated with hum CLI"))}\"",
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                    UseShellExecute = false,
+                                    CreateNoWindow = true
+                                }
+                            };
+                            createFileProcess.Start();
+                            await createFileProcess.WaitForExitAsync();
+                        }
+                        catch
+                        {
+                            // Ignore errors in the fallback method
+                        }
                     }
                 }
                 else

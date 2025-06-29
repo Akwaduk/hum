@@ -40,7 +40,7 @@ namespace hum.Providers
             {
                 Description = description,
                 Private = false,
-                AutoInit = true
+                AutoInit = false  // Don't initialize with README to avoid push conflicts
             };
 
             try
