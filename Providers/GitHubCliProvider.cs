@@ -9,6 +9,12 @@ namespace hum.Providers
     public class GitHubCliProvider : ISourceControlProvider, ICiCdProvider
     {
         public string ProviderName => "GitHub CLI";
+        
+        // Add a method to check if this provider can handle a specific source control type
+        public bool CanHandle(string sourceControlType)
+        {
+            return sourceControlType.Equals("github", StringComparison.OrdinalIgnoreCase);
+        }
 
         public async Task<RepositoryInfo> CreateRepositoryAsync(string name, string description)
         {

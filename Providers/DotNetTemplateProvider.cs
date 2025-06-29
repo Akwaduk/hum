@@ -12,7 +12,7 @@ namespace hum.Providers
         
         public bool CanHandle(string templateType)
         {
-            return templateType.Equals("dotnet", StringComparison.OrdinalIgnoreCase);
+            return templateType.StartsWith("dotnet", StringComparison.OrdinalIgnoreCase);
         }
         
         public async Task<string> CreateProjectAsync(ProjectConfig projectConfig)
@@ -27,11 +27,38 @@ namespace hum.Providers
                 Directory.CreateDirectory(projectPath);
             }
             
+            // Determine which .NET template to use based on the templateType
+            string dotnetTemplate = "web"; // Default web template
+            
+            // Map template types to actual dotnet template names
+            if (projectConfig.TemplateType.Equals("dotnet-webapi", StringComparison.OrdinalIgnoreCase))
+            {
+                dotnetTemplate = "webapi";
+            }
+            else if (projectConfig.TemplateType.Equals("dotnet-worker", StringComparison.OrdinalIgnoreCase))
+            {
+                dotnetTemplate = "worker";
+            }
+            else if (projectConfig.TemplateType.Equals("dotnet-console", StringComparison.OrdinalIgnoreCase))
+            {
+                dotnetTemplate = "console";
+            }
+            else if (projectConfig.TemplateType.Equals("dotnet-blazor", StringComparison.OrdinalIgnoreCase))
+            {
+                dotnetTemplate = "blazorserver";
+            }
+            else if (projectConfig.TemplateType.Equals("dotnet-blazorapp", StringComparison.OrdinalIgnoreCase))
+            {
+                dotnetTemplate = "blazor";
+            }
+            
+            Console.WriteLine($"Using .NET template: {dotnetTemplate}");
+            
             // Run dotnet new command to create a new project
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"new web -n {projectConfig.Name} -o {projectPath}",
+                Arguments = $"new {dotnetTemplate} -n {projectConfig.Name} -o {projectPath}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

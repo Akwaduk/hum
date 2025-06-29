@@ -17,8 +17,8 @@ namespace hum.Commands
 
             var templateOption = new Option<string>(
                 "--template",
-                () => "dotnet-webapi",
-                "The template to use (e.g., dotnet-webapi, dotnet-worker)");
+                () => "webapi",
+                "The template to use (e.g., webapi, blazorapp)");
 
             var envOption = new Option<string>(
                 "--env",
@@ -102,6 +102,7 @@ namespace hum.Commands
 
             Console.WriteLine($"Creating service '{name}' using template '{template}'");
             Console.WriteLine($"Target environment: {environment}");
+            
             if (!string.IsNullOrEmpty(host))
             {
                 Console.WriteLine($"Target host: {host}");
@@ -140,7 +141,13 @@ namespace hum.Commands
             if (!string.IsNullOrEmpty(org))
             {
                 projectConfig.AdditionalOptions["github_org"] = org;
-            }            // Create providers
+            }
+            
+            // Explicitly set the source control provider to "github"
+            projectConfig.SourceControlProvider = "github";
+            projectConfig.CiCdProvider = "github";
+
+            // Create providers
             var projectTemplateProvider = new Providers.DotNetTemplateProvider();
             var sourceControlProvider = new Providers.GitHubCliProvider(); // Use GitHub CLI instead
             var infrastructureProvider = new Providers.AnsibleProvider(null);
@@ -156,7 +163,8 @@ namespace hum.Commands
             try
             {
                 // Provision the project
-                string projectPath = await provisioningService.ProvisionProjectAsync(projectConfig);                Console.WriteLine();
+                string projectPath = await provisioningService.ProvisionProjectAsync(projectConfig);
+                Console.WriteLine();
                 Console.WriteLine($"✅ Service '{name}' created successfully!");
                 Console.WriteLine($"📁 Project path: {projectPath}");
                 Console.WriteLine($"🔗 Repository created via GitHub CLI");

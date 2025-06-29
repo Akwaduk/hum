@@ -9,6 +9,11 @@ namespace hum.Providers
     {
         private readonly GitHubClient _client;
         private readonly string _username;
+        
+        public bool CanHandle(string sourceControlType)
+        {
+            return sourceControlType.Equals("github", StringComparison.OrdinalIgnoreCase);
+        }
 
         public GitHubProvider(string token, string username)
         {
