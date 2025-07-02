@@ -8,12 +8,13 @@ This guide will help you install and set up the `hum` CLI tool on your system.
 
 Run the provided installation script from the project directory:
 
-**PowerShell:**
+**PowerShell (with dependency management):**
 ```powershell
 .\install-hum.ps1
 ```
+This script checks for required dependencies (.NET SDK, GitHub CLI, Ansible) and offers to install them using winget.
 
-**Command Prompt:**
+**Command Prompt (basic installation):**
 ```cmd
 .\install-hum.bat
 ```
@@ -85,6 +86,75 @@ hum template list
 hum doctor
 ```
 
+## Dependencies
+
+The hum CLI tool requires:
+
+### 1. .NET SDK 9.0 or later
+- **Windows:** Install via [.NET SDK download](https://dotnet.microsoft.com/download) or using winget:
+  ```powershell
+  winget install Microsoft.DotNet.SDK.9
+  ```
+
+### 2. GitHub CLI (gh)
+- **Windows:** Install using winget:
+  ```powershell
+  winget install GitHub.cli
+  ```
+- Configure with:
+  ```powershell
+  gh auth login
+  ```
+
+### 3. Ansible 2.15+ (Optional)
+Ansible is only required if you plan to:
+- Use the deployment features of generated projects
+- Set up remote Ansible orchestration
+- Run end-to-end tests during development
+
+For general use of hum, **Ansible is not required**.
+
+When needed, install Ansible using these options:
+
+- **Windows Options:**
+  
+  **Option A: WSL2 (Recommended)**
+  ```powershell
+  # Install WSL2 with Ubuntu
+  wsl --install -d Ubuntu
+  
+  # In WSL2 Ubuntu terminal:
+  sudo apt update
+  sudo apt install -y ansible
+  ```
+  
+  **Option B: Windows Native (via pip)**
+  ```powershell
+  # Ensure Python is installed
+  python --version
+  
+  # Install Ansible via pip
+  pip install ansible
+  ```
+
+The PowerShell installation script (`install-hum.ps1`) can automatically check for these dependencies and help install them when available through winget. For Ansible, the script will provide installation instructions but continue the installation without it.
+
+### Remote Ansible Configuration
+
+If you want to use hum with a remote Ansible server (rather than installing Ansible locally), you can configure it after installation:
+
+```powershell
+# Configure remote Ansible server connection
+hum ansible-config
+```
+
+This interactive command will prompt you for:
+- Remote host information
+- SSH username
+- SSH key path (with an option to generate and deploy a new key)
+
+Once configured, hum will communicate with your remote Ansible server for deployment operations.
+
 ## Troubleshooting
 
 ### "Command not found" Error
@@ -105,5 +175,28 @@ If you need to reinstall:
 dotnet tool uninstall --global hum
 
 # Then run the install script again
-.\install-hum.bat
+.\install-hum.ps1  # PowerShell with dependency management
+# or
+.\install-hum.bat  # Command Prompt basic installation
 ```
+
+### Missing Dependencies
+
+If you see errors related to missing dependencies:
+
+1. For **.NET SDK** issues:
+   ```powershell
+   winget install Microsoft.DotNet.SDK.9
+   ```
+
+2. For **GitHub CLI** issues:
+   ```powershell
+   winget install GitHub.cli
+   # Then authenticate:
+   gh auth login
+   ```
+
+3. For **Ansible** issues:
+   ```powershell
+   winget install Ansible.Ansible
+   ```

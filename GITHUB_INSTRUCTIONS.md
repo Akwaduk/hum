@@ -1,4 +1,60 @@
-<!-- FILE: CONTRIBUTING.md -->
+# GitHub Contribution Workflow
+
+This document provides a step-by-step guide for contributing to the hum project through GitHub. It covers everything from forking the repository to creating pull requests and addressing feedback.
+
+## Initial Setup
+
+### 1. Fork the Repository
+
+1. Visit the [hum repository](https://github.com/organization/hum)
+2. Click the "Fork" button in the top-right corner
+3. Select your account as the destination
+
+Alternatively, use GitHub CLI:
+```powershell
+gh repo fork organization/hum --clone=true --remote=true
+cd hum
+```
+
+### 2. Clone Your Fork
+
+```powershell
+git clone https://github.com/YOUR-USERNAME/hum.git
+cd hum
+```
+
+### 3. Add Upstream Remote
+
+```powershell
+git remote add upstream https://github.com/organization/hum.git
+git fetch upstream
+```
+
+## Making Contributions
+
+### 1. Create a Feature Branch
+
+Always create a new branch for each contribution:
+
+```powershell
+git checkout -b feature/descriptive-branch-name
+```
+
+Use prefixes like:
+- `feature/` for new features
+- `fix/` for bug fixes
+- `docs/` for documentation updates
+- `refactor/` for code refactoring
+
+### 2. Develop Your Changes
+
+1. Make your code changes
+2. Follow the coding standards
+3. Run tests to verify your changes
+4. Format your code:
+   ```powershell
+   dotnet format
+   ```ING.md -->
 # Contributing to hum
 
 Welcome! **hum** is a global .NET CLI tool that bootstraps new services end-to-end—GitHub repo, CI/CD via GitHub Actions, and Ansible inventory—so you can go from “idea” to “running in prod” in under a minute.

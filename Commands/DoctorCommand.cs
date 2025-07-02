@@ -228,14 +228,17 @@ namespace hum.Commands
                 else
                 {
                     Console.WriteLine("❌ Not found");
-                    Console.WriteLine("   To use 'hum', you need either a local Ansible installation or a configured remote orchestrator.");
+                    Console.WriteLine("   Ansible is optional and only required for deployment features.");
+                    Console.WriteLine("   Basic operation of hum will work without it.");
                     Console.WriteLine();
-                    Console.WriteLine("   To install Ansible locally, visit:");
-                    Console.WriteLine("   https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html");
+                    Console.WriteLine("   When you need deployment features, you have two options:");
+                    Console.WriteLine("   1. Install Ansible locally (see: https://docs.ansible.com/ansible/latest/installation_guide/)");
+                    Console.WriteLine("   2. Configure a remote Ansible server with `hum ansible-config`");
                     Console.WriteLine();
-                    Console.WriteLine("   To configure a remote orchestrator, run `hum ansible-config` for an interactive setup.");
-                    Console.WriteLine("   Alternatively, you can create or update a 'hum.settings.json' file with your connection details.");
-                    return false;
+                    Console.WriteLine("   On Windows, we recommend either:");
+                    Console.WriteLine("   - WSL2 with Ubuntu: `wsl --install -d Ubuntu` then `sudo apt install ansible`");
+                    Console.WriteLine("   - Python/pip: `pip install ansible`");
+                    return true; // Return true as this is optional
                 }
             }
             catch (Exception)
